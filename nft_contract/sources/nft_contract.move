@@ -45,9 +45,10 @@ use std::string;
 
     // ===== Entrypoints =====
 
-    /// Create a new NFT
+    //function to create a new NFT
     public entry fun mint_with_price(
         payment: &mut Coin<SUI>,    // Payment in SUI
+        artist_address: address,
         required_price: u64,        // Price for this specific NFT
         name: vector<u8>,
         description: vector<u8>,
@@ -58,10 +59,14 @@ use std::string;
         assert!(coin::value(payment) >= required_price, 0); // Error if payment too low
 
         // Take the payment
-        let paid_coin = coin::split(payment, required_price, ctx);
-        
+        let mut paid_coin = coin::split(payment, required_price, ctx);
+        let company_amount = required_price/2;
+        let paid_coin_for_company = coin::split(&mut paid_coin, company_amount, ctx);
+        let paid_coin_for_artist = paid_coin;
+
         // Transfer payment to treasury or split between parties
-        transfer::public_transfer(paid_coin, @0xef9e91c776f698bf70dbdd857f79f343e434074567d6beb4c3626c51990ef450); // Replace with your treasury address
+        transfer::public_transfer(paid_coin_for_company, @0xef9e91c776f698bf70dbdd857f79f343e434074567d6beb4c3626c51990ef450);
+        transfer::public_transfer(paid_coin_for_artist, artist_address);
 
         // Create and transfer NFT
         let sender = tx_context::sender(ctx);
@@ -81,7 +86,7 @@ use std::string;
         transfer::transfer(nft, sender)
     }
 
-    // Optional: Add function to split payment between parties
+    //function to split payment between parties
     public fun split_payment(
         mut payment: Coin<SUI>,
         company_share: u64,
